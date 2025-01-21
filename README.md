@@ -1,1 +1,1 @@
-# MetodosComputacionales2-GXX
+# MetodosComputacionales2-G02
