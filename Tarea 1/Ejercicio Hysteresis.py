@@ -2,7 +2,13 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
-archivo= open('C:/Users/Usuario/Desktop/Hysteresis.dat', 'r')
+import os
+# Obtener la ruta absoluta del directorio donde está el archivo .py
+script_dir = os.path.dirname(os.path.abspath(__file__))
+
+# Combinar la ruta del directorio con el nombre del archivo
+file_path = os.path.join(script_dir, 'Hysteresis_org.dat')
+archivo= open(file_path, 'r')
 list_t = []
 list_B = []
 list_H = []
@@ -57,4 +63,5 @@ plt.xlabel('t')  # Etiqueta del eje x
 plt.ylabel('H')  # Etiqueta del eje y
 plt.grid(True)  # Agregar una cuadrícula
 plt.legend()
+#plt.savefig("histerico.pdf", format="pdf")
 plt.show()
