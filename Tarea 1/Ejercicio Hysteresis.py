@@ -30,12 +30,12 @@ archivo.close()
 plt.figure(figsize=(10, 5))  # Puedes ajustar el tamaño de la figura si lo deseas
 plt.subplot(1, 2, 1)  # Esto crea una figura con 2 gráficos en una fila (1 fila, 2 columnas)
 plt.plot(list_t, list_B, color='b', marker='o', linestyle='-', label='t vs B')  # Graficamos t vs B
-plt.title('t vs B')
-plt.xlabel('t')  # Etiqueta del eje x
-plt.ylabel('B')  # Etiqueta del eje y
+plt.title('Campo externo en función del tiempo.')
+plt.xlabel('Tiempo (ms)')  # Etiqueta del eje x
+plt.ylabel('Campo externo (mT)')  # Etiqueta del eje y
 plt.grid(True)  # Agregar una cuadrícula
 plt.legend()
-plt.show()
+#plt.show()
 #Para hallar la frecuencia lo que hice fue plantear una curva senosoidal que se ajuste
 #bien a los datos y, a partir de los parametros de la curva de ajuste, tomar la frecuencia
 #de la curva de ajuste.
@@ -53,15 +53,48 @@ A_fit, f_fit, phi_fit, C_fit = popt
 
 # Mostrar los resultados
 
-print(f"Frecuencia (f): {f_fit}")
+print(f"2.b) Frecuencia (f): {f_fit} Hz. Método: Ajuste de función sinusoidal.")
 
 # Crear la segunda gráfica (t vs H)
 plt.subplot(1, 2, 2)  # Esto coloca el gráfico en la segunda posición
 plt.plot(list_t, list_H, color='r', marker='x', linestyle='-', label='t vs H')  # Graficamos t vs H
-plt.title('t vs H')
-plt.xlabel('t')  # Etiqueta del eje x
-plt.ylabel('H')  # Etiqueta del eje y
+plt.title('Densidad de campo interno en función del tiempo.')
+plt.xlabel('Tiempo (ms)')  # Etiqueta del eje x
+plt.ylabel('Densidad de campo interno (A/m)')  # Etiqueta del eje y
 plt.grid(True)  # Agregar una cuadrícula
 plt.legend()
-#plt.savefig("histerico.pdf", format="pdf")
-plt.show()
+#plt.show()
+plt.savefig("histerico.pdf", format="pdf")
+
+#==============================================================================================
+#PUNTO 2C 
+fig, ax = plt.subplots()
+
+# Crear la gráfica parametrizada por t usando scatter y un colormap
+scatter = ax.scatter(list_B, list_H, c=list_t, cmap='viridis', edgecolor='k')
+
+# Agregar etiquetas a los ejes
+ax.set_xlabel('B (mT)')
+ax.set_ylabel('H (A/m)')
+ax.set_title('Gráfica de H vs B parametrizada por el tiempo.')
+
+# Agregar una barra de color para mostrar los valores de t
+cbar = plt.colorbar(scatter, ax=ax)
+cbar.set_label('Tiempo (ms)')
+
+
+fig.savefig("energy.pdf", format="pdf")
+
+
+#CÁLCULO DEL ÁREA 
+
+# Convertir a arrays de NumPy para cálculos eficientes
+B = np.array(list_B)
+H = np.array(list_H)
+
+# Calcular el área usando la fórmula del polígono de Shoelace
+area = 0.5 * np.abs(np.dot(B, np.roll(H, 1)) - np.dot(H, np.roll(B, 1)))
+
+print(f"2.c) Pérdida de energía: {area:.4f} mJ.")
+
+
