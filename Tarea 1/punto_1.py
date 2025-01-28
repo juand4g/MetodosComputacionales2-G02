@@ -17,6 +17,7 @@ from scipy.signal import savgol_filter
 from scipy.signal import find_peaks
 from scipy.signal import peak_widths
 import os
+from numpy import sqrt, diff
 
 
 # Obtener la ruta absoluta del directorio donde está el archivo .py
@@ -113,6 +114,26 @@ print('1.b) Método: Ajuste a polinomio 4to grado.')
 
 peaks, properties = find_peaks(cleaned_data['Intensity (mJy)'], height=0.05, distance=20)
 results_half = peak_widths(cleaned_data['Intensity (mJy)'], peaks, rel_height=0.5)
+
+# Convertir índices de inicio y fin a longitudes de onda
+wavelengths_start = cleaned_data["Wavelength (pm)"][np.round(results_half[2]).astype(int)]
+wavelengths_end = cleaned_data["Wavelength (pm)"][np.round(results_half[3]).astype(int)]
+
+# Calcular el FWHM como la diferencia entre fin e inicio
+fwhm_values = wavelengths_end.values - wavelengths_start.values
+
+# Extraer las intensidades máximas y sus longitudes de onda
+peak_wavelengths = cleaned_data["Wavelength (pm)"][peaks]
+peak_intensities = cleaned_data["Intensity (mJy)"][peaks]
+
+# Imprimir los valores de los picos
+print("1.c):")
+for i, (wavelength, intensity, fwhm) in enumerate(zip(peak_wavelengths, peak_intensities, fwhm_values)):
+    print(f"Pico {i + 1}:")
+    print(f"  Longitud de onda (pm): {wavelength:.4g}")
+    print(f"  Intensidad (mJy): {intensity:.4g}")
+    print(f"  FWHM (pm): {fwhm:.4g}")
+
 # Crear la gráfica
 plt.figure(figsize=(10, 6))
 plt.plot(cleaned_data["Wavelength (pm)"], cleaned_data["Intensity (mJy)"], label="Intensity (mJy)", color='blue')
@@ -146,4 +167,15 @@ y = cleaned_data["Intensity (mJy)"]
 
 # Calcular la integral usando la regla del trapecio
 area_trapz = trapezoid(y, x)
-print(f"Integral : {area_trapz:.2f} mJy·pm")
+
+# Calcular la incertidumbre
+#Definir los errores en intensidades
+delta_y = 0.02 * y
+
+# Propagar la incertidumbre en la integral
+# Para cada segmento, calcular la contribución de la incertidumbre
+segment_widths = diff(x)  # Diferencias entre puntos consecutivos en x
+delta_area = sqrt(((delta_y[:-1] * segment_widths) ** 2).sum())
+
+# Imprimir la integral y su incertidumbre
+print(f"1.d) Energía irradiada: ({area_trapz:.4g} ± {delta_area:.1g}) mJy·pm")
