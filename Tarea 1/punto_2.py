@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 import os
+import re
 # Obtener la ruta absoluta del directorio donde está el archivo .py
 script_dir = os.path.dirname(os.path.abspath(__file__))
 
@@ -24,6 +25,31 @@ for linea in archivo:
                     list_H.append(num_fltH)
 
 archivo.close()
+
+#========================================================
+#Lectura del archivo original
+file_path_2 = os.path.join(script_dir, 'hysteresis.dat')
+#archivo_original= open(file_path_2, 'r')
+with open(file_path_2, "r") as file:
+    lines = file.readlines()
+
+# Corregir los espacios faltantes antes de los números negativos
+corrected_lines = []
+for line in lines:
+    # Buscar secuencias de números que se pegan y separarlas
+    corrected_line = re.sub(r'(?<=\d)-', ' -', line.strip())  # Separar números pegados
+    corrected_lines.append(corrected_line)
+
+# Convertir los datos corregidos a un arreglo NumPy
+try:
+    data = np.array([list(map(float, line.split())) for line in corrected_lines])
+    print("Datos corregidos y convertidos con éxito:")
+    print(data)
+except ValueError as e:
+    print("Error al convertir los datos. Revisa el formato del archivo.")
+    print(f"Detalles del error: {e}")
+#===========================================================================
+
 #print("Lista T:", list_t)
 #print("Lista B:", list_B)
 #print("Lista H:", list_H)
