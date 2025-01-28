@@ -7,14 +7,33 @@ import re
 # Obtener la ruta absoluta del directorio donde está el archivo .py
 script_dir = os.path.dirname(os.path.abspath(__file__))
 
-# Combinar la ruta del directorio con el nombre del archivo
-file_path = os.path.join(script_dir, 'Hysteresis_org.dat')
+#========================================================
+#Lectura del archivo original
+file_path = os.path.join(script_dir, 'hysteresis.dat')
+
+archivo= open(file_path, 'r+')
+lineas=archivo.readlines()
+for i in range(0,len(lineas)):
+    lista= list(lineas[i])
+    for j in range(1,len(lineas[i])-1):
+        if lista[j] =='-':
+            lista[j]= ' -'
+        elif lista[j] == '0' and lista[j+1] == '.' and lista[j-1] != ' -' and lista[j-1] != '1':
+            lista[j]= ' 0'
+    lineas[i] = ''.join(lista)  # Convertimos la lista de nuevo a una cadena
+
+# Volvemos al principio del archivo para sobrescribirlo
+archivo.seek(0)
+archivo.writelines(lineas)  # Escribimos las líneas modificadas en el archivo
+archivo.close()
+#Volvemos a abrirlo ahora ya con las modificaciones para poder leer los datos
 archivo= open(file_path, 'r')
 list_t = []
 list_B = []
 list_H = []
 for linea in archivo:
     if linea != '':
+            linea= re.sub(r'\s+', ' ', linea).strip()
             partes = linea.split()
             if len(partes) == 3:
                     num_fltT = float(partes[0])
@@ -25,29 +44,6 @@ for linea in archivo:
                     list_H.append(num_fltH)
 
 archivo.close()
-
-#========================================================
-#Lectura del archivo original
-file_path_2 = os.path.join(script_dir, 'hysteresis.dat')
-#archivo_original= open(file_path_2, 'r')
-with open(file_path_2, "r") as file:
-    lines = file.readlines()
-
-# Corregir los espacios faltantes antes de los números negativos
-corrected_lines = []
-for line in lines:
-    # Buscar secuencias de números que se pegan y separarlas
-    corrected_line = re.sub(r'(?<=\d)-', ' -', line.strip())  # Separar números pegados
-    corrected_lines.append(corrected_line)
-
-# Convertir los datos corregidos a un arreglo NumPy
-try:
-    data = np.array([list(map(float, line.split())) for line in corrected_lines])
-    print("Datos corregidos y convertidos con éxito:")
-    print(data)
-except ValueError as e:
-    print("Error al convertir los datos. Revisa el formato del archivo.")
-    print(f"Detalles del error: {e}")
 #===========================================================================
 
 #print("Lista T:", list_t)
@@ -90,7 +86,7 @@ plt.ylabel('Densidad de campo interno (A/m)')  # Etiqueta del eje y
 plt.grid(True)  # Agregar una cuadrícula
 plt.legend()
 #plt.show()
-plt.savefig("histerico.pdf", format="pdf")
+plt.savefig(os.path.join(script_dir, 'histerico.pdf'), format="pdf")
 
 #==============================================================================================
 #PUNTO 2C 
@@ -109,7 +105,7 @@ cbar = plt.colorbar(scatter, ax=ax)
 cbar.set_label('Tiempo (ms)')
 
 
-fig.savefig("energy.pdf", format="pdf")
+fig.savefig(os.path.join(script_dir, 'energy.pdf'), format="pdf")
 
 
 #CÁLCULO DEL ÁREA 
