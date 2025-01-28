@@ -10,6 +10,7 @@ Original file is located at
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+from scipy.integrate import trapezoid
 from scipy.optimize import curve_fit
 from numpy.polynomial.polynomial import Polynomial
 from scipy.signal import savgol_filter
@@ -110,7 +111,7 @@ print('1.b) Método: Ajuste a polinomio 4to grado.')
 
 # Encontrar los picos y calcular el ancho a media altura (FWHM)
 
-peaks, properties = find_peaks(cleaned_data['Intensity (mJy)'], height=0, distance=10)
+peaks, properties = find_peaks(cleaned_data['Intensity (mJy)'], height=0.05, distance=20)
 results_half = peak_widths(cleaned_data['Intensity (mJy)'], peaks, rel_height=0.5)
 # Crear la gráfica
 plt.figure(figsize=(10, 6))
@@ -139,3 +140,10 @@ plt.ylabel("Intensity (mJy)")
 plt.legend()
 plt.title("Peaks and Widths Detection")
 plt.savefig(os.path.join(script_dir, 'picos_marcados.pdf'), format="pdf")
+
+x = cleaned_data["Wavelength (pm)"]
+y = cleaned_data["Intensity (mJy)"]
+
+# Calcular la integral usando la regla del trapecio
+area_trapz = trapezoid(y, x)
+print(f"Integral : {area_trapz:.2f} mJy·pm")
