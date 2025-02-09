@@ -70,8 +70,8 @@ plt.grid(True)
 plt.legend()
 plt.show()
 
-# Encontrar la frecuencia dominante
-frecuencia_dominante = frecuencias[np.argmax(densidad_espectral)]
+# Encontrar la frecuencia dominante y evitamos el indice 0
+frecuencia_dominante = frecuencias[np.argmax(np.abs(transformada[1:]))+1]
 
 # Calcular el período (inverso de la frecuencia dominante en días)
 if frecuencia_dominante != 0:
