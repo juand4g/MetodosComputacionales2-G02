@@ -94,23 +94,36 @@ plt.title('Manchas solares a lo largo del tiempo')
 df = pd.DataFrame({'fecha': fechas, 'manchas': manchas_sol})
 df.set_index('fecha', inplace=True)
 
-# Aplicar un promedio móvil (ejemplo: ventana de 30 días)
-ventana = 30  # Tamaño de la ventana del promedio móvil
-manchas_suavizadas = df['manchas'].rolling(window=ventana, center=True).mean()
-manchas_suavizadas_sg = savgol_filter(df['manchas'], window_length=51, polyorder=3)
+# Definir un filtro pasa-bajo (Butterworth)
+def butter_lowpass(cutoff, fs, order=4):
+    nyquist = 0.5 * fs  # Frecuencia de Nyquist
+    normal_cutoff = cutoff / nyquist  # Frecuencia de corte normalizada
+    b, a = butter(order, normal_cutoff, btype='low', analog=False)  # Coeficientes del filtro
+    return b, a
+
+def butter_lowpass_filter(data, cutoff, fs, order=4):
+    b, a = butter_lowpass(cutoff, fs, order)
+    y = filtfilt(b, a, data)  # Aplicar el filtro
+    return y
+
+# Filtrar los datos para eliminar el ruido (ajusta el corte según sea necesario)
+# cutoff: frecuencia de corte, fs: frecuencia de muestreo (1 día por defecto)
+cutoff = 0.01  # Frecuencia de corte (ajústala según el análisis, por ejemplo, 0.01 para eliminar frecuencias altas)
+fs = 1  # Frecuencia de muestreo (1 día)
+manchas_suavizadas = butter_lowpass_filter(df['manchas'].values, cutoff, fs)
 
 # Visualizar los datos originales y los suavizados
 plt.figure(figsize=(10, 6))
 plt.plot(df.index, df['manchas'], label='Datos originales')
-plt.plot(df.index, manchas_suavizadas_sg, label='Savitzky-Golay', linestyle='--', color='red')
+plt.plot(df.index, manchas_suavizadas, label='Datos suavizados', linestyle='--', color='red')
 plt.xlabel('Fecha')
 plt.ylabel('Manchas solares')
-plt.title('Datos de manchas solares con y sin suavizado (Savitzky-Golay)')
+plt.title('Datos de manchas solares con y sin suavizado')
 plt.legend()
 
 # Realizar la transformada de Fourier sobre los datos suavizados
-frecuencias = np.fft.rfftfreq(len(manchas_suavizadas_sg), d=1)  # 'd=1' significa separación por 1 día
-transformada = np.fft.rfft(manchas_suavizadas_sg)
+frecuencias = np.fft.rfftfreq(len(manchas_suavizadas), d=1)  # 'd=1' significa separación por 1 día
+transformada = np.fft.rfft(manchas_suavizadas)
 
 # Calcular la densidad espectral
 densidad_espectral = np.abs(transformada)**2
@@ -137,6 +150,75 @@ else:
 
 
 # 2.b.b. ==========================================================================
+#Cargar los datos
+archivo_manchas = open(os.path.join(script_dir, "list_aavso-arssn_daily.txt"), 'r')
+year, month, day, manchas_sol = [], [], [], []
+
+# Procesar el archivo
+for linea in archivo_manchas:
+    if linea.strip():  # Ignorar líneas vacías
+        partes = linea.split()
+        if len(partes) == 4 and partes[0] != 'Year' and int(partes[0]) < 2012:
+            year.append(int(partes[0]))
+            month.append(int(partes[1]))
+            day.append(int(partes[2]))
+            manchas_sol.append(int(partes[3]))
+archivo_manchas.close()
+
+# Crear DataFrame con fechas
+fechas = pd.to_datetime([f'{a}-{m}-{d}' for a, m, d in zip(year, month, day)])
+df = pd.DataFrame({'fecha': fechas, 'manchas': manchas_sol})
+df.set_index('fecha', inplace=True)
+
+# Definir un filtro pasa-bajo (Butterworth)
+def butter_lowpass(cutoff, fs, order=4):
+    nyquist = 0.5 * fs
+    normal_cutoff = cutoff / nyquist
+    b, a = butter(order, normal_cutoff, btype='low', analog=False)
+    return b, a
+
+def butter_lowpass_filter(data, cutoff, fs, order=4):
+    b, a = butter_lowpass(cutoff, fs, order)
+    y = filtfilt(b, a, data)
+    return y
+
+# Filtrar los datos
+cutoff, fs = 0.01, 1
+manchas_suavizadas = butter_lowpass_filter(df['manchas'].values, cutoff, fs)
+
+# Transformada de Fourier
+frecuencias = np.fft.rfftfreq(len(manchas_suavizadas), d=1)
+transformada = np.fft.rfft(manchas_suavizadas)
+
+# Tomar solo los primeros 10 armónicos
+n_armonicos = 10
+transformada_filtrada = np.zeros_like(transformada)
+transformada_filtrada[:n_armonicos] = transformada[:n_armonicos]
+
+# Reconstrucción de la señal con los primeros 10 armónicos
+prediccion = np.fft.irfft(transformada_filtrada)
+
+# Extender la predicción hasta el 10 de febrero de 2025
+fecha_inicio = df.index[0]
+fecha_fin = pd.to_datetime("2025-02-10")
+dias_prediccion = (fecha_fin - fecha_inicio).days
+
+t = np.arange(len(manchas_suavizadas) + dias_prediccion)
+prediccion_extendida = np.fft.irfft(transformada_filtrada, n=len(t))
+
+# Obtener la predicción para el 10 de febrero de 2025
+n_manchas_hoy = prediccion_extendida[-1]
+print(f'2.b.b) {n_manchas_hoy = }')
+
+# Gráfico
+plt.figure(figsize=(10, 6))
+plt.plot(df.index, df['manchas'], label='Datos originales', alpha=0.6)
+plt.plot(pd.date_range(start=df.index[0], periods=len(prediccion_extendida)), prediccion_extendida, label='Predicción FFT (10 armónicos)', linestyle='--', color='red')
+plt.xlabel('Fecha')
+plt.ylabel('Número de manchas solares')
+plt.title('Predicción de manchas solares usando FFT')
+plt.legend()
+plt.savefig(os.path.join(script_dir,'2.b.pdf'))
 
 # Punto 3: Filtros ===============================================================
 # 3.a 
@@ -204,42 +286,41 @@ plt.savefig(os.path.join(script_dir, "3.1.pdf"))  # Guardar la figura en PDF
 #3.b ==========================================================================
 # Función para cargar y convertir imagen a escala de grises
 def cargar_imagen(nombre):
-    img = cv2.imread(nombre)  # Cargar en escala de grises
+    img = cv2.imread(nombre, cv2.IMREAD_GRAYSCALE)  # Cargar en escala de grises
     return img.astype(np.float32) / 255.0  # Normalizar valores entre 0 y 1
 
-# Función para aplicar filtro en la Transformada de Fourier
-def filtrar_ruido_periodico(img, umbral=50):
-    # Aplicar FFT 2D
-    F = np.fft.fft2(img)
-    F_shifted = np.fft.fftshift(F)  # Centrar el espectro
-
-    # Obtener la magnitud del espectro de Fourier
-    magnitud = np.log1p(np.abs(F_shifted))
-
-    # Crear una máscara para eliminar picos (ruido periódico)
+def filtrar_ruido_periodico(img, umbral_relativo=0.1):
     filas, columnas = img.shape
-    cx, cy = columnas // 2, filas // 2  # Centro de la imagen
-    mask = np.ones((filas, columnas), np.uint8)
 
-    # Identificar picos brillantes fuera del centro y suprimirlos
-    mask[magnitud > umbral] = 0  # Elimina valores altos (picos de ruido)
+    # Transformada de Fourier
+    F = np.fft.fft2(img)
+    F_shifted = np.fft.fftshift(F)
 
-    # Aplicar la máscara a la transformada de Fourier
-    F_shifted *= mask
+    # Magnitud del espectro
+    magnitud = np.abs(F_shifted)
 
-    # Transformada Inversa
-    F_inverse = np.fft.ifftshift(F_shifted)
-    img_filtrada = np.fft.ifft2(F_inverse).real
+    # Identificar picos de alta intensidad en el espectro
+    umbral = umbral_relativo * np.max(magnitud)
+    mascara = magnitud < umbral  # Mantiene valores por debajo del umbral
+
+    # Aplicar la máscara en el dominio de frecuencia
+    F_shifted_filtrado = F_shifted * mascara
+
+    # Transformada inversa
+    F_inv = np.fft.ifftshift(F_shifted_filtrado)
+    img_filtrada = np.fft.ifft2(F_inv).real
 
     return img_filtrada
 
 # Procesar ambas imágenes
-imagenes = [os.path.join(script_dir,"catto.png"), os.path.join(script_dir,"Noisy_Smithsonian_Castle.jpg")]
-
-for img_name in imagenes:
-    print(f"Intentando cargar la imagen desde: {img_name}")
-    img = cargar_imagen(img_name)
-    img_filtrada = filtrar_ruido_periodico(img, umbral=50)
+imagenes = ["catto.png", "Noisy_Smithsonian_Castle.jpg"]
+umbrales = [0.01,0.05]
+for i in range(2):
+    img_name = imagenes[i]
+    umbral = umbrales[i]
+    img_path = os.path.join(script_dir,img_name)
+    img = cargar_imagen(img_path)
+    img_filtrada = filtrar_ruido_periodico(img, umbral)
 
     # Mostrar resultados
     plt.figure(figsize=(10, 5))
@@ -253,7 +334,7 @@ for img_name in imagenes:
     plt.title(f"Filtrada - {img_name}")
     plt.axis("off")
 
-    plt.show()
+    plt.savefig(os.path.join(script_dir,"filtered_"+img_name))
 
 
 
