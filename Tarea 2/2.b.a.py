@@ -3,9 +3,8 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from scipy.signal import butter, filtfilt
 from statsmodels.tsa.seasonal import seasonal_decompose
-from scipy.signal import savgol_filter
 # Cargar los datos
-archivo = open('C:/Users/Usuario/Desktop/manchas solares.txt', 'r')
+archivo = open('C:/Users/Usuario/Desktop/list_aavso-arssn_daily.txt', 'r')
 year = []
 month = []
 day = []
@@ -38,24 +37,37 @@ plt.show()
 df = pd.DataFrame({'fecha': fechas, 'manchas': manchas_sol})
 df.set_index('fecha', inplace=True)
 
-# Aplicar un promedio móvil (ejemplo: ventana de 30 días)
-ventana = 30  # Tamaño de la ventana del promedio móvil
-manchas_suavizadas = df['manchas'].rolling(window=ventana, center=True).mean()
-manchas_suavizadas_sg = savgol_filter(df['manchas'], window_length=51, polyorder=3)
+# Definir un filtro pasa-bajo (Butterworth)
+def butter_lowpass(cutoff, fs, order=4):
+    nyquist = 0.5 * fs  # Frecuencia de Nyquist
+    normal_cutoff = cutoff / nyquist  # Frecuencia de corte normalizada
+    b, a = butter(order, normal_cutoff, btype='low', analog=False)  # Coeficientes del filtro
+    return b, a
+
+def butter_lowpass_filter(data, cutoff, fs, order=4):
+    b, a = butter_lowpass(cutoff, fs, order)
+    y = filtfilt(b, a, data)  # Aplicar el filtro
+    return y
+
+# Filtrar los datos para eliminar el ruido (ajusta el corte según sea necesario)
+# cutoff: frecuencia de corte, fs: frecuencia de muestreo (1 día por defecto)
+cutoff = 0.01  # Frecuencia de corte (ajústala según el análisis, por ejemplo, 0.01 para eliminar frecuencias altas)
+fs = 1  # Frecuencia de muestreo (1 día)
+manchas_suavizadas = butter_lowpass_filter(df['manchas'].values, cutoff, fs)
 
 # Visualizar los datos originales y los suavizados
 plt.figure(figsize=(10, 6))
 plt.plot(df.index, df['manchas'], label='Datos originales')
-plt.plot(df.index, manchas_suavizadas_sg, label='Savitzky-Golay', linestyle='--', color='red')
+plt.plot(df.index, manchas_suavizadas, label='Datos suavizados', linestyle='--', color='red')
 plt.xlabel('Fecha')
 plt.ylabel('Manchas solares')
-plt.title('Datos de manchas solares con y sin suavizado (Savitzky-Golay)')
+plt.title('Datos de manchas solares con y sin suavizado')
 plt.legend()
 plt.show()
 
 # Realizar la transformada de Fourier sobre los datos suavizados
-frecuencias = np.fft.rfftfreq(len(manchas_suavizadas_sg), d=1)  # 'd=1' significa separación por 1 día
-transformada = np.fft.rfft(manchas_suavizadas_sg)
+frecuencias = np.fft.rfftfreq(len(manchas_suavizadas), d=1)  # 'd=1' significa separación por 1 día
+transformada = np.fft.rfft(manchas_suavizadas)
 
 # Calcular la densidad espectral
 densidad_espectral = np.abs(transformada)**2
