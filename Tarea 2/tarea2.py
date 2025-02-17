@@ -108,6 +108,8 @@ plt.xlabel('t_max (s)')
 plt.ylabel('FWHM (Hz)')
 plt.title('FWHM en función del intervalo de tiempo (log-log)')
 plt.grid(True)
+plt.savefig(os.path.join(script_dir,"1.b.pdf"))
+
 
 # 1.c.
 data = pd.read_csv("https://www.astrouw.edu.pl/ogle/ogle4/OCVS/lmc/cep/phot/I/OGLE-LMC-CEP-0001.dat", delimiter=" ")
@@ -150,8 +152,8 @@ plt.ylabel("Intensidad y")
 plt.title("Gráfico de dispersión de y vs φ")
 
 # Imprimir valores clave
-print(f"Frecuencia de Nyquist: {f_nyquist:.4f}")
-print(f"Frecuencia de oscilación (f_true): {f_true:.4f}")
+print(f"1.c) f Nyquist: {f_nyquist:.4f}")
+print(f"1.c) f true: {f_true:.4f}")
 
 # Punto 2: Transformada rápida ==========================================================
 # 2.a.
