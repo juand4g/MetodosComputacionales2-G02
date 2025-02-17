@@ -150,6 +150,7 @@ plt.scatter(phi, y, alpha=0.5, s=10)
 plt.xlabel("Fase φ")
 plt.ylabel("Intensidad y")
 plt.title("Gráfico de dispersión de y vs φ")
+plt.savefig(os.path.join(script_dir,"1.c.pdf"))
 
 # Imprimir valores clave
 print(f"1.c) f Nyquist: {f_nyquist:.4f}")
