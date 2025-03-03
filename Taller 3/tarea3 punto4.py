@@ -50,7 +50,7 @@ symmetric_eigenvalues = symmetric_eigenvalues_lowest+symmetric_eigenvalues_low +
 #symmetric_eigenvalues = find_eigenvalues(E_values, symmetric=True, met="RK23")
 
 print("Buscando energías antisimétricas...")
-antisymmetric_eigenvalues_lowest = find_eigenvalues(E_lowest, symmetric=True)
+antisymmetric_eigenvalues_lowest = find_eigenvalues(E_lowest, symmetric=False)
 antisymmetric_eigenvalues_low = find_eigenvalues(E_low, symmetric=False)
 antisymmetric_eigenvalues_high = find_eigenvalues(E_high, symmetric=False)
 antisymmetric_eigenvalues = antisymmetric_eigenvalues_lowest+antisymmetric_eigenvalues_low + antisymmetric_eigenvalues_high
