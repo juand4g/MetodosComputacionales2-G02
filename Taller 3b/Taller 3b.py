@@ -67,6 +67,76 @@ ax.set_title("Solución de la Ecuación de Poisson")
 plt.savefig(os.path.join(script_dir,'1.png'))
 
 #PUNTO 2
+import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.animation as animation
+from IPython.display import HTML
+# Asegurar que se use el backend correcto
+plt.rcParams["animation.html"] = "jshtml"
+
+# Parámetros del problema
+L = 2  # Longitud del dominio
+Nx = 100  # Número de puntos espaciales
+dx = L / (Nx - 1)  # Paso espacial
+c = 1  # Velocidad de la onda
+dt = 0.5 * dx / c  # Paso temporal (satisfaciendo la condición de Courant)
+Nt = 200  # Número de pasos temporales
+
+# Malla espacial
+x = np.linspace(0, L, Nx)
+
+# Condición inicial: un pulso gaussiano
+u0 = np.exp(-125 * (x - L/2)**2)
+
+# Inicializar listas para cada condición de frontera
+conds_frontera = ["Dirichlet", "Neumann", "Periódicas"]
+u_vals = [np.copy(u0) for _ in conds_frontera]
+u_prev_vals = [np.copy(u0) for _ in conds_frontera]
+
+# Función para actualizar la onda en el tiempo
+def update_wave(u, u_prev, bc_type):
+    u_new = np.zeros_like(u)
+    for i in range(1, Nx - 1):
+        u_new[i] = 2 * u[i] - u_prev[i] + (c * dt / dx) ** 2 * (u[i+1] - 2 * u[i] + u[i-1])
+    
+    # Aplicar condiciones de frontera
+    if bc_type == "Dirichlet":
+        u_new[0] = u_new[-1] = 0
+    elif bc_type == "Neumann":
+        u_new[0] = u_new[1]
+        u_new[-1] = u_new[-2]
+    elif bc_type == "Periódicas":
+        u_new[0] = u_prev[-2]  # Condición periódica
+        u_new[-1] = u_prev[1]  # Condición periódica
+    
+    return u_new, u
+
+# Inicializar la figura
+fig, axes = plt.subplots(3, 1, figsize=(6, 8))
+lines = []
+
+for ax, cond in zip(axes, conds_frontera):
+    ax.set_xlim(0, L)
+    ax.set_ylim(-1, 1)
+    ax.set_title(f"Condición de frontera: {cond}")
+    line, = ax.plot(x, u0, lw=2)
+    lines.append(line)
+
+# Función de animación
+def animate(frame):
+    global u_vals, u_prev_vals
+    for i, cond in enumerate(conds_frontera):
+        u_vals[i], u_prev_vals[i] = update_wave(u_vals[i], u_prev_vals[i], cond)
+        lines[i].set_ydata(u_vals[i])
+    return lines
+
+# Crear la animación (sin blit para compatibilidad con notebook)
+ani = animation.FuncAnimation(fig, animate, frames=Nt, interval=30, blit=False)
+
+HTML(ani.to_jshtml())
+
+# Guardar la animación en un archivo mp4 DESPUÉS de mostrarla
+ani.save("2.mp4", writer="ffmpeg", fps=30)
 
 #PUNTO 3
 
