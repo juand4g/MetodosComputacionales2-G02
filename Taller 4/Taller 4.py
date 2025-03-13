@@ -1,6 +1,9 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import os
+import matplotlib.animation as animation
 
+script_dir = os.path.dirname(os.path.abspath(__file__))
 
 #PUNTO 1_A-------------------------------------------------------------------------------------------------------------------------------------------
 def g_x(x, n=10, alpha=4/5):
@@ -26,7 +29,7 @@ plt.hist(samples, bins=200, density=True, alpha=0.6, color='b')
 plt.xlabel('x')
 plt.ylabel('Densidad')
 plt.title('Histograma de muestras generadas')
-plt.savefig('1.a.pdf')
+plt.savefig(os.path.join(script_dir,'1.a.pdf'))
 
 
 #PUNTO 1_B--------------------------------------------------------------------------------------------------------------------------------------------
@@ -39,3 +42,50 @@ A = sqrt_pi / np.mean(ratios)
 A_std = sqrt_pi * np.std(ratios) / (np.sqrt(len(samples)) * np.mean(ratios)**2)
 
 print(f"1.b) A = {A:.3f} ± {A_std:.3f}")
+
+#PUNTO 3 -----------------------------------------------------------------------------------------------------------------------------------------------
+# Parámetros del sistema
+N = 150
+J = 0.2
+beta = 10
+frames = 500
+iterations_per_frame = 400
+
+# Inicializar la malla de espines aleatoriamente
+spins = np.random.choice([-1, 1], size=(N, N))
+
+# Función para calcular la energía de un solo espín
+def calculate_energy_change(spins, i, j):
+    top = spins[(i-1)%N, j]
+    bottom = spins[(i+1)%N, j]
+    left = spins[i, (j-1)%N]
+    right = spins[i, (j+1)%N]
+    return 2 * J * spins[i, j] * (top + bottom + left + right)
+
+# Función para realizar una iteración del algoritmo de Metrópolis
+def metropolis_step(spins):
+    for _ in range(iterations_per_frame):
+        i, j = np.random.randint(0, N, 2)
+        delta_E = calculate_energy_change(spins, i, j)
+        if delta_E <= 0 or np.random.rand() < np.exp(-beta * delta_E):
+            spins[i, j] *= -1
+    return spins
+
+# Configuración de la animación
+fig, ax = plt.subplots()
+im = ax.imshow(spins, cmap='gray', vmin=-1, vmax=1)
+ax.set_xticks([])
+ax.set_yticks([])
+
+def update(frame):
+    global spins
+    spins = metropolis_step(spins)
+    im.set_data(spins)
+    return [im]
+
+# Crear la animación
+ani = animation.FuncAnimation(fig, update, frames=frames, interval=50, blit=True)
+
+# Guardar la animación en un archivo de video
+ani.save(os.path.join(script_dir, '3.mp4'), writer='ffmpeg')
+
