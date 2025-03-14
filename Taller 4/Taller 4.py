@@ -121,11 +121,16 @@ nueva_letra = generar_siguiente_letra(ejemplo, P)
 print("Nueva letra generada:", nueva_letra)
 
 # Abrir archivo y leer contenido
-archivo = open('C:/Users/Usuario/Desktop/Libro.txt', 'r', encoding='utf-8')
-lineas = archivo.readlines()
-contenido = "".join(lineas)  # Convertir la lista a un solo string
+archivo_path = os.path.join(script_dir, "Libro.txt")
+
+
+# Abrir y leer el archivo completo en un solo string
+with open(archivo_path, 'r', encoding='utf-8') as archivo:
+    contenido = archivo.read()
+
+# Realizar los reemplazos en el contenido
 contenido = contenido.replace("\r\n", "\n").replace("\n\n", "#").replace("\n", "").replace("#", "\n\n")
-archivo.close()
+
 
 # Eliminar caracteres especiales (tildes, comillas, guiones bajos)
 contenido = unidecode.unidecode(contenido)  # Remueve tildes
